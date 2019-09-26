@@ -6,9 +6,26 @@ import tweepy
 import hashlib
 import _pickle
 import sys
+import argparse
 from cryptography.fernet import Fernet
 
+# Argparse is the recommended parsing library in Python provided by the python docs
+# https://docs.python.org/3/howto/argparse.html
 parseArguments = argparse.ArgumentParser(description="Reads through command line arguments")
+parseArguments.add_argument("-s", help="Assign IP Address of Server")
+parseArguments.add_argument("-p",help="Assign Port Number of Server")
+parseArguments.add_argument("-z",help="Assign Socket Size of Server")
+parseArguments.add_argument("-t",help="Assign Hashtag Needed to See")
+parsedArguments = parseArguments.parse_args()
+
+if parsedArguments.s != "-s":
+    parseArguments.error("You must specify a valid IP Address of Server")
+if parsedArguments.p != "-p":
+    parseArguments.error("You must specify a valid Port Number of Server")
+if parsedArguments.z != "-z":
+    parseArguments.error("You must specify a valid Socket Size of Server")
+if parsedArguments.t != "-t":
+    parseArguments.error("You must specify a valid Hashtag Need to See")
 
 # This code was taken from this tutorial on tweepy (No author)
 # http://docs.tweepy.org/en/latest/streaming_how_to.html 
