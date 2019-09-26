@@ -81,6 +81,7 @@ class MyStreamListener(tweepy.StreamListener):
         else:
             answerToTweet = f.decrypt(newMessage)
             print("[Checkpoint 07] Decrypt: Using Key: {}| Plain text: {}".format(newKey, answerToTweet))
+            # TODO: put text to speech code here
 
 
     def on_error(self, status):
