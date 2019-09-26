@@ -68,6 +68,19 @@ class MyStreamListener(tweepy.StreamListener):
 
         unpickledMessage = _pickle.loads(answerPayload)
 
+        newKey = unpickledMessage[0]
+        newMessage = unpickledMessage[1]
+        newHash = unpickledMessage[2]
+
+        newH = hashlib.md5()
+        newH.update(newMessage)
+        newMd5Hash = newH.hexdigest()
+
+        if(newMd5Hash != newHash):
+            print("The hashes do not match")
+        else:
+            answerToTweet = f.decrypt(newMessage)
+            print("[Checkpoint 07] Decrypt: Using Key: {}| Plain text: {}".format(newKey, answerToTweet))
 
 
     def on_error(self, status):
@@ -78,6 +91,11 @@ auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 
 # Create the api to connect to twitter with your creadentials
-api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
+# api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, compression=True)
+api = tweepy.API(auth)
 
 print("[Checkpoint 02] Listening for tweets from Twitter API that contain questions")
+
+tweetListener = MyStreamListener()
+tweetStreamer = tweepy.Stream(api.auth,tweetListener)
+tweetStreamer.filter(track = [hashTag])
