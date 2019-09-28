@@ -19,11 +19,11 @@ parseArguments.add_argument("-sp",help="Assign Port Number of Server")
 parseArguments.add_argument("-z",help="Assign Socket Size of Server")
 parsedArguments = parseArguments.parse_args()
 
-if parsedArguments.sip is not None:
+if parsedArguments.sip is None:
     parseArguments.error("You must specify a valid IP Address of Server")
-if parsedArguments.sp is not None:
+if parsedArguments.sp is None:
     parseArguments.error("You must specify a valid Port Number of Server")
-if parsedArguments.z is not None:
+if parsedArguments.z is None:
     parseArguments.error("You must specify a valid Socket Size of Server")
 
 serverIp = parsedArguments.sip
