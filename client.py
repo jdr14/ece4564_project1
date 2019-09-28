@@ -55,7 +55,7 @@ class MyStreamListener(tweepy.StreamListener):
 
         # Tutorial on how to create and send sockets by https://docs.python.org/3/library/socket.html
         clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        clientSocket.connect((serverIp, portNumber))
+        clientSocket.connect((serverIp, int(portNumber)))
         # Tutorial on how to serialize and deserialize data using pickle by https://www.pythoncentral.io/how-to-pickle-unpickle-tutorial/
         pickledMessage = _pickle.dumps(questionPayload)
 
