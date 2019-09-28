@@ -24,4 +24,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
         conn, addr = serverSocket.accept()
         while True:
                 print("connected by: ", addr)
-                print("this is conn: ", conn)
+                data = conn.recv(16)
+                print('received {!r}'.format(data))
+                break
