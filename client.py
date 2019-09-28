@@ -62,7 +62,7 @@ class MyStreamListener(tweepy.StreamListener):
         clientSocket.send(pickledMessage)
         print("[Checkpoint 05] Sending data: {}".format(pickledMessage))
 
-        answerPayload = clientSocket.recv(socketSize)
+        answerPayload = clientSocket.recv(int(socketSize))
         print("[Checkpoint 06] Received data: {}".format(answerPayload))
         clientSocket.close()
 
