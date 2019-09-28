@@ -22,5 +22,6 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
         serverSocket.bind((socket.gethostname(), int(portNumber)))
         serverSocket.listen()
         conn, addr = serverSocket.accept()
-        with conn:
+        while True:
                 print("connected by: ", addr)
+                print("this is conn: ", conn)
