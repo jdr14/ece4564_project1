@@ -1,9 +1,10 @@
-from ServerKeys import *
+import ServerKeys
 import socket
 import hashlib
 import _pickle
 import sys
 import argparse
+import wolframalpha
 from cryptography.fernet import Fernet
 
 parseArguments = argparse.ArgumentParser(description="Read through command line arguemnts")
@@ -31,7 +32,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 dataUnpickled = _pickle.loads(data)
                 # print('received: {}'.format(dataUnpickled))
                 keyCollected = dataUnpickled[0]
-                print("newKey: ", keyCollected)
+                # print("newKey: ", keyCollected)
                 originalEncryptedMessage = dataUnpickled[1]
                 # print("newMessage: ", originalEncryptedMessage)
                 hashCollected = dataUnpickled[2]
@@ -42,7 +43,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 index1 = decryptedString.find('"')+1
                 index2 = decryptedString.find('"', index1)
                 decryptedQuestion = decryptedString[index1:index2]
-                print("decrypt: {}".format(decryptedQuestion))
+                print("[Checkpoint 03] The question recieved is: {}".format(decryptedQuestion))
 
                 newH = hashlib.md5()
                 newH.update(originalEncryptedMessage)
@@ -50,4 +51,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 # print("md5newHash: ", newMd5Hash)
                 if(newMd5Hash == hashCollected):
                         print("[Checkpoint 04] Hashes have been validated.")
+                wol_client = wolframalpha.Client(ServerKeys.WOLFRAM_ALPHA_API_KEY)
+                res = wol_client.query(decryptedQuestion)
+                print("[Checkpoint 05] The question {} has been sent to Wolfram Alpha.".format(decryptedQuestion))
+                result = next(res.results).text
+                print('Received answer from Wolframalpha : ',result)
                 break
