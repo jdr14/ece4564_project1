@@ -63,7 +63,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
 
                 # encrypt result using private key orignially recieved
                 encryptedResult = f.encrypt(resultAsBytes)
-                print("[Checkpoint 07] Encrypt: Generated Key: {}| Cipher text: {}".format(privateKey, encryptedResult))
+                print("[Checkpoint 07] Encrypt- Cipher text: {}".format(encryptedResult))
 
                 # create a md5 hash of the encrypted result
                 h = hashlib.md5()
