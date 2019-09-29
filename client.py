@@ -68,9 +68,9 @@ class MyStreamListener(tweepy.StreamListener):
 
         unpickledMessage = _pickle.loads(answerPayload)
 
-        newKey = unpickledMessage[0]
-        newMessage = unpickledMessage[1]
-        newHash = unpickledMessage[2]
+        # newKey = unpickledMessage[0]
+        newMessage = unpickledMessage[0]
+        newHash = unpickledMessage[1]
 
         newH = hashlib.md5()
         newH.update(newMessage)
@@ -79,8 +79,9 @@ class MyStreamListener(tweepy.StreamListener):
         if(newMd5Hash != newHash):
             print("The hashes do not match")
         else:
-            answerToTweet = f.decrypt(newMessage)
-            print("[Checkpoint 07] Decrypt: Using Key: {}| Plain text: {}".format(newKey, answerToTweet))
+            answerToTweet = str(f.decrypt(newMessage))
+            decryptedA = answerToTweet[2:(len(answerToTweet)-1)]
+            print("[Checkpoint 07] Decrypt- Plain text: {}".format(decryptedA))
             # TODO: put text to speech code here
 
 
