@@ -20,6 +20,24 @@ if parsedArguments.z is None:
 portNumber = parsedArguments.sp
 socketSize = parsedArguments.z
 
+# function for actual decryption and parsing of the payload and twitter question
+def decryptQuestion(f, message):
+        decryptedBytes = f.decrypt(message)
+        decryptedString = str(decryptedBytes)
+        index1 = decryptedString.find('"')+1
+        index2 = decryptedString.find('"', index1)
+        decryptedQ = decryptedString[index1:index2]
+        return decryptedQ
+
+# function used to interact with the wolfram alpha api, returns the result of the api call
+def wolfAnswer(question):
+        wolfClient = wolframalpha.Client(ServerKeys.WOLFRAM_ALPHA_API_KEY)
+        resultPackage = wolfClient.query(question)
+        print("[Checkpoint 05] The question {} has been sent to Wolfram Alpha.".format(question))
+        # needed to wait for answer from wolfram alpha
+        answer = next(resultPackage.results).text
+        return answer
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
         serverSocket.bind((socket.gethostname(), int(portNumber)))
         print("[Checkpoint 01] Connecting to port {} and waiting for message".format(portNumber))
@@ -37,25 +55,30 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 # print("newMessage: ", originalEncryptedMessage)
                 hashCollected = dataUnpickled[2]
                 # print("newHash: ", hashCollected)
+
+                # decrypt questions using payload produced
                 f= Fernet(keyCollected)
-                decryptedBytes = f.decrypt(originalEncryptedMessage)
-                decryptedString = str(decryptedBytes)
-                index1 = decryptedString.find('"')+1
-                index2 = decryptedString.find('"', index1)
-                decryptedQuestion = decryptedString[index1:index2]
+                decryptedQuestion = decryptQuestion(f, originalEncryptedMessage)
                 print("[Checkpoint 03] The question recieved is: {}".format(decryptedQuestion))
 
+                # Verify checksum: validate to see if md5 sent in the original package and
+                # md5 hash prduced using question are equal
                 newH = hashlib.md5()
                 newH.update(originalEncryptedMessage)
                 newMd5Hash = newH.hexdigest()
                 # print("md5newHash: ", newMd5Hash)
                 if(newMd5Hash == hashCollected):
                         print("[Checkpoint 04] Hashes have been validated.")
-                wol_client = wolframalpha.Client(ServerKeys.WOLFRAM_ALPHA_API_KEY)
-                res = wol_client.query(decryptedQuestion)
-                print("[Checkpoint 05] The question {} has been sent to Wolfram Alpha.".format(decryptedQuestion))
-                result = next(res.results).text
+                else:
+                        print("[Checkpoint 04] Hashes do not match, thus are not valid.")
+                        break
+
+                # implementation of wolfram alpha API call to recieve answer
+                result = wolfAnswer(decryptedQuestion)
                 print("[Checkpoint 06] The answer to your question is: ", result)
+
+
+                # IBM code should go around here
 
                 # beginning of sending back response to the client
                 # encode message using python encode message
@@ -76,6 +99,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 # pickle payload and send to client
                 pickledMessage = _pickle.dumps(resultPayload)
 
+                print("[Checkpoint 08] Package has been sent to the client")
                 # send message back to the socket recieved from the original connection
                 conn.send(pickledMessage)
 
