@@ -9,6 +9,43 @@ import sys
 import argparse
 from cryptography.fernet import Fernet
 
+# Graceful import handling for non standard python package
+try:
+    import vlc
+except ImportError:
+    print("Error: Could not import vlc module for sound output")
+    print("Please run 'pip install python-vlc'")
+    sys.exit(1)
+
+try:
+    from ibm_watson import TextToSpeechV1
+except ImportError:
+    print("Error: Could not import IBM Watson module")
+    print("Please run 'pip install --upgrade \"ibm-watson>=3.4.0\"'")
+    sys.exit(1)
+
+IBM_WATSON_URL = "https://stream.watsonplatform.net/text-to-speech/api"
+AUDIO_TYPES = [
+    'wav',
+    'mp3',
+    'ogg',
+]
+VOICES = [  # default is 'en-US_MichaelVoice'
+    'en-GB_KateVoice',
+    'en-DE_DieterVoice',
+    'en-US_AllisonVoice',
+    'en-ES_LauraVoice'
+]
+FILE_NAME = 'question.wav'
+ibmWatsonAccess = TextToSpeechV1(
+    iam_apikey = IBM_WATSON_API_KEY,
+    url = IBM_WATSON_URL,
+) 
+
+media = vlc.Instance("--aout=alsa")
+player = media.media_player_new()
+
+
 hashTag = "#ECE4564T19"
 
 # Argparse is the recommended parsing library in Python provided by the python docs
@@ -83,7 +120,23 @@ class MyStreamListener(tweepy.StreamListener):
             decryptedA = answerToTweet[2:(len(answerToTweet)-1)]
             print("[Checkpoint 07] Decrypt- Plain text: {}".format(decryptedA))
             # TODO: put text to speech code here
-
+            
+            with open(FILE_NAME) as audioFile:
+                    audioFile.seek(0) # ensure beginning of the file
+                    audioFile.write(ibmWatsonAccess.synthesize(
+                            decryptedA,
+                            voice=VOICES[VOICE_CHOICE],
+                            accept='audio/wav'
+                    ).get_result().content)
+                    audioFile.truncate()
+            
+            # os.system('cvlc {}'.format(FILE_NAME))
+            # player = vlc.MediaPlayer(FILE_NAME)
+            # player.audio_set_volume(5)
+            # player.play()
+            player.set_media(media.media_new(FILE_NAME))
+            player.play()
+            time.sleep(5)
 
     def on_error(self, status):
         print(status)
