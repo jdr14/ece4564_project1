@@ -33,7 +33,7 @@ def decryptQuestion(f, message):
 def wolfAnswer(question):
         wolfClient = wolframalpha.Client(ServerKeys.WOLFRAM_ALPHA_API_KEY)
         resultPackage = wolfClient.query(question)
-        print("[Checkpoint 05] The question {} has been sent to Wolfram Alpha.".format(question))
+        print("[Checkpoint 05] The question: '{}' has been sent to Wolfram Alpha.".format(question))
         # needed to wait for answer from wolfram alpha
         answer = next(resultPackage.results).text
         return answer
@@ -103,4 +103,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 # send message back to the socket recieved from the original connection
                 conn.send(pickledMessage)
 
-                break
+                # break
