@@ -37,7 +37,7 @@ VOICES = [  # default is 'en-US_MichaelVoice'
 ]
 FILE_NAME = 'question.wav'
 ibmWatsonAccess = TextToSpeechV1(
-    iam_apikey = IBM_WATSON_API_KEY,
+    iam_apikey = ServerKeys.IBM_WATSON_API_KEY,
     url = IBM_WATSON_URL,
 ) 
 
