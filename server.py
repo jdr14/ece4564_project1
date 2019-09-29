@@ -55,5 +55,28 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 res = wol_client.query(decryptedQuestion)
                 print("[Checkpoint 05] The question {} has been sent to Wolfram Alpha.".format(decryptedQuestion))
                 result = next(res.results).text
-                print('Received answer from Wolframalpha : ',result)
+                print("[Checkpoint 06] The answer to your question is: ", result)
+
+                # beginning of sending back response to the client
+                # encode message using python encode message
+                resultAsBytes = result.encode()
+
+                # encrypt result using private key orignially recieved
+                encryptedResult = f.encrypt(resultAsBytes)
+                print("[Checkpoint 07] Encrypt: Generated Key: {}| Cipher text: {}".format(privateKey, encryptedResult))
+
+                # create a md5 hash of the encrypted result
+                h = hashlib.md5()
+                h.update(encryptedResult)
+                md5hash = h.hexdigest()
+
+                # create payload object to send to client
+                resultPayload = (encryptedResult, md5hash)
+
+                # pickle payload and send to client
+                pickledMessage = _pickle.dumps(resultPayload)
+
+                # send message back to the socket recieved from the original connection
+                conn.send(pickledMessage)
+
                 break
