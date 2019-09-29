@@ -6,14 +6,42 @@ import sys
 import argparse
 import wolframalpha
 from cryptography.fernet import Fernet
+import time
 
 # Graceful import handling for non standard python package
+try:
+    import vlc
+except ImportError:
+    print("Error: Could not import vlc module for sound output")
+    print("Please run 'pip install python-vlc'")
+    sys.exit(1)
+
 try:
     from ibm_watson import TextToSpeechV1
 except ImportError:
     print("Error: Could not import IBM Watson module")
     print("Please run 'pip install --upgrade \"ibm-watson>=3.4.0\"'")
     sys.exit(1)
+
+IBM_WATSON_URL = "https://stream.watsonplatform.net/text-to-speech/api"
+AUDIO_TYPES = [
+    'wav',
+    'mp3',
+    'ogg',
+]
+VOICES = [  # default is 'en-US_MichaelVoice'
+    'en-GB_KateVoice',
+    'en-DE_DieterVoice',
+    'en-US_AllisonVoice',
+    'en-ES_LauraVoice'
+]
+ibmWatsonAccess = TextToSpeechV1(
+    iam_apikey = IBM_WATSON_API_KEY,
+    url = IBM_WATSON_URL,
+) 
+
+media = vlc.Instance("--aout=alsa")
+player = media.media_player_new()
 
 parseArguments = argparse.ArgumentParser(description="Read through command line arguemnts")
 parseArguments.add_argument("-sp", help="Assign Port Number on Server")
