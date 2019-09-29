@@ -35,6 +35,7 @@ VOICES = [  # default is 'en-US_MichaelVoice'
     'en-US_AllisonVoice',
     'en-ES_LauraVoice'
 ]
+FILE_NAME = 'question.wav'
 ibmWatsonAccess = TextToSpeechV1(
     iam_apikey = IBM_WATSON_API_KEY,
     url = IBM_WATSON_URL,
@@ -112,9 +113,23 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                 # implementation of wolfram alpha API call to recieve answer
                 result = wolfAnswer(decryptedQuestion)
                 print("[Checkpoint 06] The answer to your question is: ", result)
-
-
-                # IBM code should go around here
+                
+                with open(FILE_NAME) as audioFile:
+                        audioFile.seek(0) # ensure beginning of the file
+                        audioFile.write(ibmWatsonAccess.synthesize(
+                                decryptedQuestion,
+                                voice=VOICES[VOICE_CHOICE],
+                                accept='audio/wav'
+                        ).get_result().content)
+                        audioFile.truncate()
+                
+                # os.system('cvlc {}'.format(FILE_NAME))
+                # player = vlc.MediaPlayer(FILE_NAME)
+                # player.audio_set_volume(5)
+                # player.play()
+                player.set_media(media.media_new(FILE_NAME))
+                player.play()
+                time.sleep(5)
 
                 # beginning of sending back response to the client
                 # encode message using python encode message
