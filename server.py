@@ -35,6 +35,7 @@ VOICES = [  # default is 'en-US_MichaelVoice'
     'en-US_AllisonVoice',
     'en-ES_LauraVoice'
 ]
+VOICE_CHOICE = 2
 FILE_NAME = 'question.wav'
 ibmWatsonAccess = TextToSpeechV1(
     iam_apikey = ServerKeys.IBM_WATSON_API_KEY,
@@ -59,99 +60,106 @@ socketSize = parsedArguments.z
 
 # function for actual decryption and parsing of the payload and twitter question
 def decryptQuestion(f, message):
-        decryptedBytes = f.decrypt(message)
-        decryptedString = str(decryptedBytes)
-        index1 = decryptedString.find('"')+1
-        index2 = decryptedString.find('"', index1)
-        decryptedQ = decryptedString[index1:index2]
-        return decryptedQ
+    decryptedBytes = f.decrypt(message)
+    decryptedString = str(decryptedBytes)
+    index1 = decryptedString.find('"')+1
+    index2 = decryptedString.find('"', index1)
+    decryptedQ = decryptedString[index1:index2]
+    return decryptedQ
 
 # function used to interact with the wolfram alpha api, returns the result of the api call
 def wolfAnswer(question):
-        wolfClient = wolframalpha.Client(ServerKeys.WOLFRAM_ALPHA_API_KEY)
-        resultPackage = wolfClient.query(question)
-        print("[Checkpoint 05] The question: '{}' has been sent to Wolfram Alpha.".format(question))
-        # needed to wait for answer from wolfram alpha
+    wolfClient = wolframalpha.Client(ServerKeys.WOLFRAM_ALPHA_API_KEY)
+    resultPackage = wolfClient.query(question)
+    print("[Checkpoint 07] Sending question to Wolframalpha: {}".format(question))
+    # needed to wait for answer from wolfram alpha
+    answer = ''
+    try:
         answer = next(resultPackage.results).text
-        return answer
+    except AttributeError:
+        answer = "No answer found"
+    return answer
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
-        serverSocket.bind((socket.gethostname(), int(portNumber)))
-        print("[Checkpoint 01] Connecting to port {} and waiting for message".format(portNumber))
+    serverSocket.bind(('', int(portNumber)))
+    print("[Checkpoint 01] Connecting to port {} and waiting for message".format(portNumber))
+    while True:
+        print("[Checkpoint 02] Listening for client connections")
         serverSocket.listen()
         conn, addr = serverSocket.accept()
-        while True:
-                print("[Checkpoint 02] Recieved message, connected by: ", addr)
-                # print("connected by: ", addr)
-                data = conn.recv(int(socketSize))
-                dataUnpickled = _pickle.loads(data)
-                # print('received: {}'.format(dataUnpickled))
-                keyCollected = dataUnpickled[0]
-                # print("newKey: ", keyCollected)
-                originalEncryptedMessage = dataUnpickled[1]
-                # print("newMessage: ", originalEncryptedMessage)
-                hashCollected = dataUnpickled[2]
-                # print("newHash: ", hashCollected)
+        print("[Checkpoint 03] Accepted client connection from {} on port {}".format(addr[0], addr[1]))
+        # print("connected by: ", addr)
+        data = conn.recv(int(socketSize))
+        print("[Checkpoint 04] Received data: {}".format(data))
+        dataUnpickled = _pickle.loads(data)
+        # print('received: {}'.format(dataUnpickled))
+        keyCollected = dataUnpickled[0]
+        # print("newKey: ", keyCollected)
+        originalEncryptedMessage = dataUnpickled[1]
+        # print("newMessage: ", originalEncryptedMessage)
+        hashCollected = dataUnpickled[2]
+        # print("newHash: ", hashCollected)
+        
+        # decrypt questions using payload produced
+        f= Fernet(keyCollected)
+        decryptedQuestion = decryptQuestion(f, originalEncryptedMessage)
+        print("[Checkpoint 05] Decrypt: Key: {}| Plain Text: {}".format(keyCollected, decryptedQuestion))
+        print("[Checkpoint 06] Speaking Question: {}".format(decryptedQuestion))
 
-                # decrypt questions using payload produced
-                f= Fernet(keyCollected)
-                decryptedQuestion = decryptQuestion(f, originalEncryptedMessage)
-                print("[Checkpoint 03] The question recieved is: {}".format(decryptedQuestion))
+        # Verify checksum: validate to see if md5 sent in the original package and
+        # md5 hash prduced using question are equal
+        newH = hashlib.md5()
+        newH.update(originalEncryptedMessage)
+        newMd5Hash = newH.hexdigest()
+        # print("md5newHash: ", newMd5Hash)
+        if(newMd5Hash != hashCollected):
+            break
 
-                # Verify checksum: validate to see if md5 sent in the original package and
-                # md5 hash prduced using question are equal
-                newH = hashlib.md5()
-                newH.update(originalEncryptedMessage)
-                newMd5Hash = newH.hexdigest()
-                # print("md5newHash: ", newMd5Hash)
-                if(newMd5Hash == hashCollected):
-                        print("[Checkpoint 04] Hashes have been validated.")
-                else:
-                        print("[Checkpoint 04] Hashes do not match, thus are not valid.")
-                        break
+        # print("decrypted question = {}".format(decryptedQuestion))
+        # implementation of wolfram alpha API call to recieve answer
+        result = wolfAnswer(decryptedQuestion)
+        # print("type = {0}  :  result = {1}".format(type(result), result))
+        print("[Checkpoint 08] Received answer from Wolframalpha: {}".format(result))
+        
+        with open(FILE_NAME, 'wb') as audioFile:
+                audioFile.seek(0) # ensure beginning of the file
+                audioFile.write(ibmWatsonAccess.synthesize(
+                        decryptedQuestion,
+                        voice=VOICES[VOICE_CHOICE],
+                        accept='audio/wav'
+                ).get_result().content)
+                audioFile.truncate()
+        
+        # os.system('cvlc {}'.format(FILE_NAME))
+        # player = vlc.MediaPlayer(FILE_NAME)
+        # player.audio_set_volume(5)
+        # player.play()
+        player.set_media(media.media_new(FILE_NAME))
+        player.play()
+        time.sleep(5)
 
-                # implementation of wolfram alpha API call to recieve answer
-                result = wolfAnswer(decryptedQuestion)
-                print("[Checkpoint 06] The answer to your question is: ", result)
-                
-                with open(FILE_NAME) as audioFile:
-                        audioFile.seek(0) # ensure beginning of the file
-                        audioFile.write(ibmWatsonAccess.synthesize(
-                                decryptedQuestion,
-                                voice=VOICES[VOICE_CHOICE],
-                                accept='audio/wav'
-                        ).get_result().content)
-                        audioFile.truncate()
-                
-                # os.system('cvlc {}'.format(FILE_NAME))
-                # player = vlc.MediaPlayer(FILE_NAME)
-                # player.audio_set_volume(5)
-                # player.play()
-                player.set_media(media.media_new(FILE_NAME))
-                player.play()
-                time.sleep(5)
+        # beginning of sending back response to the client
+        # encode message using python encode message
+        resultAsBytes = result.encode()
 
-                # beginning of sending back response to the client
-                # encode message using python encode message
-                resultAsBytes = result.encode()
+        # encrypt result using private key orignially recieved
+        encryptedResult = f.encrypt(resultAsBytes)
+        print("[Checkpoint 09] Encrypt: Key: {}| Ciphertext: {}".format(keyCollected, encryptedResult))
 
-                # encrypt result using private key orignially recieved
-                encryptedResult = f.encrypt(resultAsBytes)
-                print("[Checkpoint 07] Encrypt- Cipher text: {}".format(encryptedResult))
+        # create a md5 hash of the encrypted result
+        h = hashlib.md5()
+        h.update(encryptedResult)
+        md5hash = h.hexdigest()
+        print("[Checkpoint 10] Generated MD5 Checksum: ", md5hash)
 
-                # create a md5 hash of the encrypted result
-                h = hashlib.md5()
-                h.update(encryptedResult)
-                md5hash = h.hexdigest()
+        # create payload object to send to client
+        resultPayload = (encryptedResult, md5hash)
 
-                # create payload object to send to client
-                resultPayload = (encryptedResult, md5hash)
-
-                # pickle payload and send to client
-                pickledMessage = _pickle.dumps(resultPayload)
-
-                print("[Checkpoint 08] Package has been sent to the client")
-                # send message back to the socket recieved from the original connection
-                conn.send(pickledMessage)
-
-                # break
+        # pickle payload and send to client
+        pickledMessage = _pickle.dumps(resultPayload)
+        print("[Checkpoint 11] Sending answer: ", pickledMessage)
+        
+        # send message back to the socket recieved from the original connection
+        conn.send(pickledMessage)
+        # serverSocket.close()
+        # break
