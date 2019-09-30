@@ -8,6 +8,7 @@ import _pickle
 import sys
 import argparse
 from cryptography.fernet import Fernet
+import time
 
 # Graceful import handling for non standard python package
 try:
@@ -32,10 +33,11 @@ AUDIO_TYPES = [
 ]
 VOICES = [  # default is 'en-US_MichaelVoice'
     'en-GB_KateVoice',
-    'en-DE_DieterVoice',
+    'de-DE_DieterVoice',
     'en-US_AllisonVoice',
-    'en-ES_LauraVoice'
+    'es-ES_LauraVoice'
 ]
+VOICE_CHOICE = 0
 FILE_NAME = 'question.wav'
 ibmWatsonAccess = TextToSpeechV1(
     iam_apikey = IBM_WATSON_API_KEY,
@@ -121,7 +123,7 @@ class MyStreamListener(tweepy.StreamListener):
             print("[Checkpoint 07] Decrypt- Plain text: {}".format(decryptedA))
             # TODO: put text to speech code here
             
-            with open(FILE_NAME) as audioFile:
+            with open(FILE_NAME, 'wb') as audioFile:
                     audioFile.seek(0) # ensure beginning of the file
                     audioFile.write(ibmWatsonAccess.synthesize(
                             decryptedA,
@@ -136,6 +138,7 @@ class MyStreamListener(tweepy.StreamListener):
             # player.play()
             player.set_media(media.media_new(FILE_NAME))
             player.play()
+            print("[Checkpoint 08] Speaking Answer: {}".format(decryptedA))
             time.sleep(5)
 
     def on_error(self, status):
