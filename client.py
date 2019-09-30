@@ -47,7 +47,6 @@ ibmWatsonAccess = TextToSpeechV1(
 media = vlc.Instance("--aout=alsa")
 player = media.media_player_new()
 
-
 hashTag = "#ECE4564T19"
 
 # Argparse is the recommended parsing library in Python provided by the python docs
@@ -121,8 +120,9 @@ class MyStreamListener(tweepy.StreamListener):
             answerToTweet = str(f.decrypt(newMessage))
             decryptedA = answerToTweet[2:(len(answerToTweet)-1)]
             print("[Checkpoint 07] Decrypt- Plain text: {}".format(decryptedA))
-            # TODO: put text to speech code here
             
+            # This code was based off of the IBM Watson tutorial found at the link below
+            # https://cloud.ibm.com/apidocs/text-to-speech?code=python
             with open(FILE_NAME, 'wb') as audioFile:
                     audioFile.seek(0) # ensure beginning of the file
                     audioFile.write(ibmWatsonAccess.synthesize(
@@ -132,10 +132,8 @@ class MyStreamListener(tweepy.StreamListener):
                     ).get_result().content)
                     audioFile.truncate()
             
-            # os.system('cvlc {}'.format(FILE_NAME))
-            # player = vlc.MediaPlayer(FILE_NAME)
-            # player.audio_set_volume(5)
-            # player.play()
+            # This code was based off of a vlc API tutorial
+            # https://pypi.org/project/python-vlc/
             player.set_media(media.media_new(FILE_NAME))
             player.play()
             print("[Checkpoint 08] Speaking Answer: {}".format(decryptedA))
@@ -143,6 +141,7 @@ class MyStreamListener(tweepy.StreamListener):
 
     def on_error(self, status):
         print(status)
+
 # Setup tweepy to authenticate with Twitter credentials:
 # This code was made by Wei Xu at http://socialmedia-class.org/twittertutorial.html
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)

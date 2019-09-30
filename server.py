@@ -88,17 +88,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
         serverSocket.listen()
         conn, addr = serverSocket.accept()
         print("[Checkpoint 03] Accepted client connection from {} on port {}".format(addr[0], addr[1]))
-        # print("connected by: ", addr)
         data = conn.recv(int(socketSize))
         print("[Checkpoint 04] Received data: {}".format(data))
         dataUnpickled = _pickle.loads(data)
-        # print('received: {}'.format(dataUnpickled))
         keyCollected = dataUnpickled[0]
-        # print("newKey: ", keyCollected)
         originalEncryptedMessage = dataUnpickled[1]
-        # print("newMessage: ", originalEncryptedMessage)
         hashCollected = dataUnpickled[2]
-        # print("newHash: ", hashCollected)
         
         # decrypt questions using payload produced
         f= Fernet(keyCollected)
@@ -115,12 +110,12 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
         if(newMd5Hash != hashCollected):
             break
 
-        # print("decrypted question = {}".format(decryptedQuestion))
-        # implementation of wolfram alpha API call to recieve answer
+        # Implementation of wolfram alpha API call to recieve answer
         result = wolfAnswer(decryptedQuestion)
-        # print("type = {0}  :  result = {1}".format(type(result), result))
         print("[Checkpoint 08] Received answer from Wolframalpha: {}".format(result))
         
+        # This code was based off of the IBM Watson tutorial found at the link below
+        # https://cloud.ibm.com/apidocs/text-to-speech?code=python
         with open(FILE_NAME, 'wb') as audioFile:
                 audioFile.seek(0) # ensure beginning of the file
                 audioFile.write(ibmWatsonAccess.synthesize(
@@ -129,11 +124,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
                         accept='audio/wav'
                 ).get_result().content)
                 audioFile.truncate()
-        
-        # os.system('cvlc {}'.format(FILE_NAME))
-        # player = vlc.MediaPlayer(FILE_NAME)
-        # player.audio_set_volume(5)
-        # player.play()
+
+        # This code was based off of a vlc API tutorial
+        # https://pypi.org/project/python-vlc/
         player.set_media(media.media_new(FILE_NAME))
         player.play()
         time.sleep(5)
@@ -161,5 +154,3 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serverSocket:
         
         # send message back to the socket recieved from the original connection
         conn.send(pickledMessage)
-        # serverSocket.close()
-        # break
